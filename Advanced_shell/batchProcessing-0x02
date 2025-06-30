@@ -1,0 +1,29 @@
+#!/bin/bash
+jq -r '.name, .weight, .height, .types[0].type.name' data.json |
+awk 'NR==1{n=$0}
+     NR==2{w=$0/10}
+     NR==3{h=$0/10}
+     NR==4{t=toupper(substr($0,1,1)) substr($0,2)}
+     END{printf "%s is of type %s, weighs %.0fkg, and is %.1fm tall.\n", n, t, w, h}'
+     
+mkdir -p pokemon_data
+for p in Bulbasaur Ivysaur Venusaur Charmander Charmeleon; do
+  name=$(echo "$p" | tr '[:upper:]' '[:lower:]')
+  echo "Fetching data for $name..."
+  success=0
+  for i in 1 2 3; do
+    if curl -s -f "https://pokeapi.co/api/v2/pokemon/$name" \
+         -o "pokemon_data/$name.json"; then
+      echo "Saved data to pokemon_data/$name.json ✅"
+      success=1
+      break
+    else
+      echo "Attempt $i failed for $name"
+      sleep 1
+    fi
+  done
+  if [ "$success" -ne 1 ]; then
+    echo "$(date): Failed to fetch $name after 3 attempts" >> errors.txt
+  fi
+  sleep 1
+done

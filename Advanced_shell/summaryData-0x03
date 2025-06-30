@@ -1,0 +1,17 @@
+#!/bin/bash
+out="pokemon_report.csv"
+{
+  echo "Name,Height (m),Weight (kg)"
+  for f in pokemon_data/*.json; do
+    jq -r '[.name, (.height/10), (.weight/10)] | @csv' "$f"
+  done
+} > "$out"
+
+awk -F, 'NR>1 {
+  sumH+=$2; sumW+=$3; count++
+}
+END {
+  printf "Average Height: %.2f m\nAverage Weight: %.2f kg\n",
+         sumH/count, sumW/count
+}' "$out"
+echo "CSV Report generated at: $out"
